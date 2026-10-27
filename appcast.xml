@@ -14,8 +14,8 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/WaiBrowser-0.1.0-3-arm64.zip" length="149618637" type="application/octet-stream" sparkle:edSignature="bhBgF/jbkrbjcTYVDbNST1a4BK8skSzDYlGJxsegH3WqVmfrYR6YUD4IeBi3Vit7Usxd0iFmS1A/6pzi3TxYCQ=="/>
             <sparkle:deltas>
-                <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/Wai%20Browser3-2.delta" sparkle:deltaFrom="2" length="66562" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977808" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="dQem/4fhOPNO1EvBj7ImR1vb4dqRU53IxCpXLzEMGLcwzcNsuew8v5l/XHH6whkmAlc3JHWd5oF8l+fZ/UayDg=="/>
-                <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/Wai%20Browser3-1.delta" sparkle:deltaFrom="1" length="68130" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977808" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="O0eqqHdsCZzQXjthoxoZP77LOcgn5WfOkNJqlLbzskalQB0jO75+rJcyRMZHxCfDR+Vw39xmmFKsfJUT9gj2BA=="/>
+                <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/Wai.Browser3-2.delta" sparkle:deltaFrom="2" length="66562" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977808" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="dQem/4fhOPNO1EvBj7ImR1vb4dqRU53IxCpXLzEMGLcwzcNsuew8v5l/XHH6whkmAlc3JHWd5oF8l+fZ/UayDg=="/>
+                <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/Wai.Browser3-1.delta" sparkle:deltaFrom="1" length="68130" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977808" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="O0eqqHdsCZzQXjthoxoZP77LOcgn5WfOkNJqlLbzskalQB0jO75+rJcyRMZHxCfDR+Vw39xmmFKsfJUT9gj2BA=="/>
             </sparkle:deltas>
         </item>
         <item>
@@ -27,7 +27,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/WaiBrowser-0.1.0-2-arm64.zip" length="149618301" type="application/octet-stream" sparkle:edSignature="/UMBzBCMcvCRRuWgXr6jY4YxWfn9WEOImdzMPuSExBsDbkMyasl6GHhNIO/zSuMChvxQs5oVX9EbeBENsWWQDg=="/>
             <sparkle:deltas>
-                <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/Wai%20Browser2-1.delta" sparkle:deltaFrom="1" length="65282" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977808" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="P2rfcaBI39yYASkjkKm0Jiv7kKt5k3t5HOr5jsKf+5+NKK+LI5Fqiw09j940PmPVES9biFqGJLajSnStCfg6CQ=="/>
+                <enclosure url="https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/Wai.Browser2-1.delta" sparkle:deltaFrom="1" length="65282" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="977808" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="P2rfcaBI39yYASkjkKm0Jiv7kKt5k3t5HOr5jsKf+5+NKK+LI5Fqiw09j940PmPVES9biFqGJLajSnStCfg6CQ=="/>
             </sparkle:deltas>
         </item>
         <item>
@@ -42,6 +42,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: 8q8L6bMKnHulQ0JtINxn/iYdn1d5fE3P6X4kZ0NtUqTjnNd2dfEAiwPWsDQ1jJGHwR1Y414ex6oiAnuenGy5Cg==
-length: 3868
+edSignature: y509xqw1p2aiDgYk3vFz4XAz/7WUagvQJgPwlyUpiVVI4qz8pcOnzjAQv52bfB3brBNo8Ojr29k6paXrc+DiBQ==
+length: 3862
 -->
