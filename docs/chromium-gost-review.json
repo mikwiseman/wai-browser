@@ -1,0 +1,50 @@
+{
+  "version": "152.0.7977.169",
+  "platform": "macos-arm64",
+  "archive_sha256": "b9c6ec6d37e31f7ec1cbad3c76a4e97311bfe7a620953017b7b2d1c83f7793c8",
+  "signature": "ad-hoc; no Developer ID team",
+  "source": "https://github.com/deemru/Chromium-Gost/releases/tag/152.0.7977.169",
+  "extensions": [
+    {
+      "name": "Extension for CAdES Browser Plugin",
+      "version": "1.3.17",
+      "permissions": [
+        "nativeMessaging"
+      ],
+      "host_permissions": null
+    },
+    {
+      "name": "Госплагин",
+      "version": "1.3.43.0",
+      "permissions": [
+        "alarms",
+        "storage",
+        "nativeMessaging",
+        "notifications",
+        "scripting",
+        "activeTab"
+      ],
+      "host_permissions": [
+        "<all_urls>"
+      ]
+    },
+    {
+      "name": "CryptoPro Extension for CAdES Browser Plug-in",
+      "version": "1.2.13",
+      "permissions": [
+        "nativeMessaging",
+        "declarativeContent",
+        "tabs"
+      ],
+      "host_permissions": null
+    },
+    {
+      "name": "Расширение для плагина Госуслуг",
+      "version": "1.2.8",
+      "permissions": [
+        "nativeMessaging"
+      ],
+      "host_permissions": null
+    }
+  ]
+}

@@ -1,13 +1,57 @@
 # Wai Browser
 
-A native macOS browser based on Chromium/CEF. Russian CA trust is confined to this browser and selected domains. macOS 13+, Apple Silicon.
+A native browser with additional certificate trust for selected websites.
 
-[Download 0.1.0](https://github.com/mikwiseman/wai-browser/releases/download/v0.1.0/WaiBrowser-0.1.0-3-arm64.zip)
+[Website](https://waiwai.is/browser) · [Download for Mac](https://github.com/mikwiseman/wai-browser/releases/latest) · [Support](https://waiwai.is/browser/support) · [Privacy](https://waiwai.is/browser/privacy)
 
-Unzip and move **Wai Browser.app** to Applications. Certificate settings: **WAI → Сертификаты…**. Changes apply after restarting the browser.
+- **Mac:** Apple Silicon, macOS 13+. CEF 156.0.14 / Chromium 156.0.8078.48, AppKit and Sparkle. Version 0.2.0 is signed and notarized.
+- **iOS:** iOS 26+, UIKit, SwiftUI settings and WebKit. App Store preparation is in progress; this is not an App Store release announcement.
 
-Default domains: `rzd.ru`, `tbank.ru`, `tbank-online.com`, `tinkoff.ru`, including subdomains. No certificates are installed into macOS Keychain. Supports RSA HTTPS; GOST/CryptoPro electronic signing is not included.
+The Mac engine is the checksum-pinned upstream CEF binary. There is no Electron, bundled extension or WAI analytics SDK. This is not a full audit of Chromium's network services.
 
-Signed by WaiWai, LLC and notarized by Apple. Sparkle verifies both the update feed and downloaded releases. This repository contains distribution files; application sources are maintained separately.
+## Certificates
 
-Initial release. Public RZD and T-Bank pages were tested; authenticated banking and ticket purchases were not. This is not a complete privacy audit of Chromium.
+Open **WAI → Сертификаты…** on Mac or the shield on iOS. Add a site by URL or from the current tab. The Russian CA is initially enabled for `rzd.ru`, `tbank.ru`, `tbank-online.com`, `tinkoff.ru` and their subdomains.
+
+Additional trust applies only inside Wai Browser. Hostname, expiry and chain checks remain active; every DNS name on the certificate must fit the selected domains. IP certificates are excluded. Certificates already trusted by the operating system retain normal behavior. There is no TLS-error bypass, proxy or system certificate installation.
+
+Mac offers to restart after changes and restores open tab URLs. iOS applies changes by reloading tabs. Revoking trust on iOS creates a fresh WebKit network session and transfers cookies and localStorage; other website storage is not transferred, so some sites may require signing in again. Save unfinished forms before applying changes.
+
+The bundled root and intermediates come from T-Bank's public downloads. Sources and SHA-256 hashes are in [the manifest](resources/certificates/manifest.json). Certificates update with signed app releases. **RSA TLS is supported; GOST, CryptoPro and electronic signatures are not.** Importing arbitrary CA files is not implemented.
+
+Mac profile: `~/Library/Application Support/Wai Browser`. [Certificate-store design](docs/profile-store.md).
+
+## Build for Mac
+
+Requires Xcode command-line tools, CMake, Python 3.12+ and Node.js for integration tests.
+
+```sh
+python3 -m pip install -r requirements-dev.txt
+WAI_SIGN_IDENTITY=- ./scripts/build.sh
+npm ci --ignore-scripts
+WAI_SIGN_IDENTITY=- npm run test:browser
+```
+
+The build downloads pinned CEF and Sparkle, runs unit checks and signs the app. `-` is an ad-hoc identity for local development; distribution requires your Developer ID identity. Output: `build/Wai Browser.app`.
+
+Browser tests use disposable profiles and TLS fixtures, with a mock Keychain only in test launches. The production app uses normal macOS Keychain encryption. Keep test profiles in the OS temporary directory, outside Documents.
+
+## Build for iOS
+
+See [ios/README.md](ios/README.md) for Xcode, simulator and WebKit test instructions.
+
+## Keyboard
+
+Both versions support Command-L/T/W/R/F, Command-Shift-T, Command-comma, Command-[ / ], Control-Tab and Command-1…9. Native text editing keeps copy, cut, paste, select all and undo/redo. iOS shortcuts require an external keyboard. Mac also provides save, print, zoom and Quit in its native menus.
+
+## Releases
+
+Sparkle checks and downloads updates from the [signed HTTPS feed](https://mikwiseman.github.io/wai-browser/appcast.xml). Updates include the engine and certificates. A new upstream engine still needs a tested, signed Wai Browser release.
+
+```sh
+python3 scripts/release.py --build-number 4 --feed-url https://mikwiseman.github.io/wai-browser/appcast.xml --download-prefix https://github.com/mikwiseman/wai-browser/releases/download/v0.2.0/
+```
+
+The release script builds, tests, signs, notarizes and staples the app, then prepares signed archives, deltas and an appcast. It does not publish. Signing uses 1Password CLI and the local Apple API configuration; private keys are never included in this repository.
+
+[Validation and known limits](QA.md) · [Chromium-Gost review](docs/chromium-gost.md)

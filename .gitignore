@@ -1,0 +1,10 @@
+/build/
+/dist/
+/work/
+/.secrets/
+.DS_Store
+
+/node_modules/
+/ios/WaiBrowser.xcodeproj/xcuserdata/
+*.xcuserstate
+/.xcodebuildmcp/

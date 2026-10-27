@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>Wai Browser</string>
+<key>CFBundleIdentifier</key><string>is.waiwai.browser</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
+<key>CFBundleName</key><string>Wai Browser</string>
+<key>CFBundleDisplayName</key><string>Wai Browser</string>
+<key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleVersion</key><string>@WAI_BUILD_NUMBER@</string>
+<key>CFBundleShortVersionString</key><string>@PROJECT_VERSION@</string>
+<key>LSMinimumSystemVersion</key><string>13.0</string>
+<key>NSPrincipalClass</key><string>WaiApplication</string>
+<key>NSSupportsAutomaticGraphicsSwitching</key><true/>
+<key>NSHighResolutionCapable</key><true/>
+<key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
+<key>NSCameraUsageDescription</key><string>Доступ к камере для сайтов, которым вы разрешили её использовать.</string>
+<key>NSMicrophoneUsageDescription</key><string>Доступ к микрофону для сайтов, которым вы разрешили его использовать.</string>
+<key>LSEnvironment</key><dict><key>MallocNanoZone</key><string>0</string></dict>
+<key>SUFeedURL</key><string>@WAI_UPDATE_FEED@</string>
+<key>SUPublicEDKey</key><string>@SPARKLE_PUBLIC_KEY@</string>
+<key>SUEnableAutomaticChecks</key><true/>
+<key>SUAutomaticallyUpdate</key><true/>
+<key>SUAllowsAutomaticUpdates</key><true/>
+<key>SURequireSignedFeed</key><true/>
+<key>SUVerifyUpdateBeforeExtraction</key><true/>
+<key>SUSendProfileInfo</key><false/>
+<key>SUScheduledCheckInterval</key><integer>86400</integer>
+</dict></plist>

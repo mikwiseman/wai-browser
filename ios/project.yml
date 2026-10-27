@@ -1,0 +1,77 @@
+name: WaiBrowser
+options:
+  bundleIdPrefix: is.waiwai
+  deploymentTarget:
+    iOS: '26.0'
+settings:
+  base:
+    SWIFT_VERSION: '5.0'
+    DEVELOPMENT_TEAM: R4A779QVVY
+    CURRENT_PROJECT_VERSION: 4
+    MARKETING_VERSION: 0.2.0
+    TARGETED_DEVICE_FAMILY: '1,2'
+    GENERATE_INFOPLIST_FILE: YES
+targets:
+  WaiBrowser:
+    type: application
+    platform: iOS
+    sources:
+      - WaiBrowser
+      - ../shared
+      - path: ../resources/certificates
+        type: folder
+        buildPhase: resources
+      - path: ../resources/public_suffix_list.dat
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: is.waiwai.browser.ios
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_CFBundleDisplayName: Wai Browser
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_NSCameraUsageDescription: Доступ к камере для сайтов с вашего разрешения.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Доступ к микрофону для сайтов с вашего разрешения.
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        SWIFT_OBJC_BRIDGING_HEADER: WaiBrowser/Bridge.h
+        SUPPORTS_MACCATALYST: YES
+    info:
+      path: WaiBrowser/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoadsInWebContent: true
+        ITSAppUsesNonExemptEncryption: false
+    dependencies:
+      - sdk: WebKit.framework
+  WaiBrowserTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - WaiBrowserTests
+      - path: ../work/ios-certificates
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - target: WaiBrowser
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: is.waiwai.browser.ios.tests
+schemes:
+  WaiBrowser:
+    build:
+      targets:
+        WaiBrowser: all
+    test:
+      targets:
+        - WaiBrowserTests

@@ -1,0 +1,17 @@
+[
+  {
+    "file": "root.der",
+    "source": "https://help-static2.tbank-online.com/certs/linux_russian_trusted_root_ca_pem/russian_trusted_root_ca_pem.crt",
+    "sha256": "d26d2d0231b7c39f92cc738512ba54103519e4405d68b5bd703e9788ca8ecf31"
+  },
+  {
+    "file": "intermediate.der",
+    "source": "https://help-static2.tbank-online.com/certs/russian_trusted_sub_ca_pem/russian_trusted_sub_ca_pem.crt",
+    "sha256": "bbbde2103e790b999ec62bd03cf625a5a2e7c316e10afe6a490eedead8b3fd9b"
+  },
+  {
+    "file": "intermediate-2024.der",
+    "source": "https://help-static2.tbank-online.com/certs/russian_trusted_sub_ca_pem/russian_trusted_sub_ca_2024_pem.crt",
+    "sha256": "2155785036c900dbb5f1bb2a1569c80c55595bd6bf94867a29bbddbc7d88a3f2"
+  }
+]
