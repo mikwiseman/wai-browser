@@ -21,9 +21,9 @@ Published on 27 October 2026: the Pages deployment passed, the live HTTPS feed m
 ## Version 0.2.0, build 4
 
 - 24 profile checks, 21 site-input checks and 10 Chromium TLS integration cases passed.
-- Native Mac UI verified: URL/current-site addition, domain normalization, close/Escape/Command-W, Restart/Later, two-tab restoration, Command-L/T/W/comma/1 and undo/redo.
+- Native Mac UI verified: URL/current-site addition, domain normalization, close/Escape/Command-W, Restart/Later, two-tab restoration, Command-L/T/W/comma/1 and undo/redo. An unsaved form prompts before restart; choosing Stay preserves its text.
 - Native-field paste is verified. The UI automation tool restores the clipboard before Chromium's asynchronous webpage paste finishes; webpage clipboard shortcuts need a separate manual check.
-- The public Sparkle feed installed build 4 over a disposable build 3. Updated code passed nested signature and Gatekeeper checks. Relaunch into the disposable path was not proven while another copy with the same bundle ID was running.
+- The public Sparkle feed installed build 4 over a disposable build 3. Updated code passed nested signature and Gatekeeper checks. Relaunch into the disposable path was not proven while another copy with the same bundle ID was running. A separate launch of the updated copy and its UI were verified.
 - iOS archived and exported with Apple Distribution signing. Three tests passed on Mac Catalyst: scoped TLS, malformed SAN parsing, and real WebKit pages/subresources plus revocation and cookie/localStorage preservation.
 - Catalyst UI verified: Command-T/W/comma, Escape, address entry and public HTTPS navigation. Command-T's conflict with the system font menu was corrected.
 - iPhone/iPad verification is pending: CoreSimulator's launch service failed to boot the isolated test device. App Store screenshots and review submission are not complete.

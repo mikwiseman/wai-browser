@@ -11,7 +11,8 @@
     "Restart restores two tabs with their original URLs",
     "Command-W closes unchanged focused settings without closing browser tabs",
     "Command-1 selects first tab",
-    "Native direct text entry; Command-Z undoes; Command-Shift-Z redoes (DOM readback)"
+    "Native direct text entry; Command-Z undoes; Command-Shift-Z redoes (DOM readback)",
+    "Unsaved form prompts before restart; Stay cancels restart and preserves entered text (native UI screenshot)"
   ],
   "limitation": "CUA temporary pasteboard restoration races asynchronous Chromium webpage paste; webpage clipboard shortcuts need a different isolated test harness. Native field paste is verified.",
   "ios": "Apple Distribution archive/export succeeded. Three Mac Catalyst tests passed, including actual WebKit subresources, rejection cases, revocation, cookies and localStorage. Native Catalyst Command-T/W/comma/Escape and HTTPS navigation verified. iPhone/iPad launch blocked by CoreSimulator; mobile UI verification remains pending."
