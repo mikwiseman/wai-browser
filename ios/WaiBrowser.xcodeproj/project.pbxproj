@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		179B4819E9DF8A5C6ED6F3CB /* TrustPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6C36174A1C1F096CF6E8C04 /* TrustPolicy.swift */; };
 		266209B853FD64EA1CC66278 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E7EC37929F5455CF9298BE9B /* WebKit.framework */; };
+		2D8D13D3E5F71C43CC4AE445 /* BrowserUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA30D1CB9BDE19DE731C5EE4 /* BrowserUITests.swift */; };
 		3D87C7A75CEAE856CF997802 /* TrustTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D49455DBE526EB09084C4F0 /* TrustTests.swift */; };
 		3E56DD776C0E7B2F7F64621E /* public_suffix_list.dat in Resources */ = {isa = PBXBuildFile; fileRef = DA3F062F2810626738AC46B2 /* public_suffix_list.dat */; };
 		7531781EAD10DD8EB6C3499C /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7CB652736E414AEFCFC28D1 /* App.swift */; };
@@ -23,6 +24,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		2AC6C39A1550971689947E6C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1181A61B9C4EBFC8693692A2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0FDD78076D63C78E20514CF4;
+			remoteInfo = WaiBrowser;
+		};
 		E7AAB69B985182C44501DDF0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1181A61B9C4EBFC8693692A2 /* Project object */;
@@ -37,6 +45,7 @@
 		19E2B51A4B236EDAA3431D35 /* WaiBrowser.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WaiBrowser.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1E24727CD93107A633B113A9 /* Bridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Bridge.h; sourceTree = "<group>"; };
 		2911AC9F1609990C02BBAB48 /* certificates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = certificates; path = ../resources/certificates; sourceTree = SOURCE_ROOT; };
+		2CB5483E066CD5E2D9F8D28D /* WaiBrowserUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WaiBrowserUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3D831FDD06BC25985E364E1F /* ios-certificates */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "ios-certificates"; path = "../work/ios-certificates"; sourceTree = SOURCE_ROOT; };
 		4FB67ED5F91C63F39668C8FE /* BrowserController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserController.swift; sourceTree = "<group>"; };
 		54EC6BD0CD294514111F971E /* WAISite.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = WAISite.h; sourceTree = "<group>"; };
@@ -45,6 +54,7 @@
 		70D82C23326037D38EB50D28 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA1702DA2724A6557AE49481 /* TrustSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustSettingsView.swift; sourceTree = "<group>"; };
 		ADFD597F3F9FA7FBD3F1F131 /* WAISite.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WAISite.m; sourceTree = "<group>"; };
+		CA30D1CB9BDE19DE731C5EE4 /* BrowserUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserUITests.swift; sourceTree = "<group>"; };
 		D6C36174A1C1F096CF6E8C04 /* TrustPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustPolicy.swift; sourceTree = "<group>"; };
 		DA3F062F2810626738AC46B2 /* public_suffix_list.dat */ = {isa = PBXFileReference; path = public_suffix_list.dat; sourceTree = "<group>"; };
 		E7EC37929F5455CF9298BE9B /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
@@ -65,6 +75,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		20131E7C05814A1EC2C192FC /* WaiBrowserUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CA30D1CB9BDE19DE731C5EE4 /* BrowserUITests.swift */,
+			);
+			path = WaiBrowserUITests;
+			sourceTree = "<group>";
+		};
 		2545C515292569A6EBA5AD91 /* WaiBrowserTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -100,6 +118,7 @@
 				B334A081C95ECF9706119390 /* shared */,
 				F7714BBAF753C449C1A09068 /* WaiBrowser */,
 				2545C515292569A6EBA5AD91 /* WaiBrowserTests */,
+				20131E7C05814A1EC2C192FC /* WaiBrowserUITests */,
 				73021ECF52267B86919D6D86 /* Frameworks */,
 				CBA5081CD39340C6348533C1 /* Products */,
 			);
@@ -110,6 +129,7 @@
 			children = (
 				19E2B51A4B236EDAA3431D35 /* WaiBrowser.app */,
 				014547CD039A4480B9ABAF08 /* WaiBrowserTests.xctest */,
+				2CB5483E066CD5E2D9F8D28D /* WaiBrowserUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -161,6 +181,24 @@
 			productReference = 19E2B51A4B236EDAA3431D35 /* WaiBrowser.app */;
 			productType = "com.apple.product-type.application";
 		};
+		86B7CCAA879D998CEC2E1C6E /* WaiBrowserUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 04650147128523AA8F62B0A8 /* Build configuration list for PBXNativeTarget "WaiBrowserUITests" */;
+			buildPhases = (
+				E64B5CC54F50F07B22646DA3 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E3210D03B7B33A8C1DE0085C /* PBXTargetDependency */,
+			);
+			name = WaiBrowserUITests;
+			packageProductDependencies = (
+			);
+			productName = WaiBrowserUITests;
+			productReference = 2CB5483E066CD5E2D9F8D28D /* WaiBrowserUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		FD714DA2499EFEC47AD609FF /* WaiBrowserTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 43EE3D111EBE413BF7F472E2 /* Build configuration list for PBXNativeTarget "WaiBrowserTests" */;
@@ -192,6 +230,10 @@
 					0FDD78076D63C78E20514CF4 = {
 						DevelopmentTeam = R4A779QVVY;
 					};
+					86B7CCAA879D998CEC2E1C6E = {
+						DevelopmentTeam = R4A779QVVY;
+						TestTargetID = 0FDD78076D63C78E20514CF4;
+					};
 					FD714DA2499EFEC47AD609FF = {
 						DevelopmentTeam = R4A779QVVY;
 					};
@@ -213,6 +255,7 @@
 			targets = (
 				0FDD78076D63C78E20514CF4 /* WaiBrowser */,
 				FD714DA2499EFEC47AD609FF /* WaiBrowserTests */,
+				86B7CCAA879D998CEC2E1C6E /* WaiBrowserUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -248,6 +291,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E64B5CC54F50F07B22646DA3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2D8D13D3E5F71C43CC4AE445 /* BrowserUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F0C06973F11D5FA4BEA9DE08 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -268,6 +319,11 @@
 			isa = PBXTargetDependency;
 			target = 0FDD78076D63C78E20514CF4 /* WaiBrowser */;
 			targetProxy = E7AAB69B985182C44501DDF0 /* PBXContainerItemProxy */;
+		};
+		E3210D03B7B33A8C1DE0085C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0FDD78076D63C78E20514CF4 /* WaiBrowser */;
+			targetProxy = 2AC6C39A1550971689947E6C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -389,6 +445,22 @@
 			};
 			name = Debug;
 		};
+		68B40739B3001799BBD29874 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = is.waiwai.browser.ios.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WaiBrowser;
+			};
+			name = Release;
+		};
 		99E1854571D5061DCEBB1FED /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -481,6 +553,22 @@
 			};
 			name = Release;
 		};
+		F9753A1ADCE7BA377741D021 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = is.waiwai.browser.ios.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WaiBrowser;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -489,6 +577,15 @@
 			buildConfigurations = (
 				99E1854571D5061DCEBB1FED /* Debug */,
 				2259F6EFCCF7ABBBFFFCDBF1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		04650147128523AA8F62B0A8 /* Build configuration list for PBXNativeTarget "WaiBrowserUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F9753A1ADCE7BA377741D021 /* Debug */,
+				68B40739B3001799BBD29874 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

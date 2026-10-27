@@ -25,6 +25,8 @@ python3 tests/ios_tls_server.py
 
 Run the WaiBrowser scheme's tests on a simulator. Fixture names use `nip.io` to resolve to loopback; DNS must be available. Test keys are generated under ignored `work/ios-certificates/` and never included in the app target or repository.
 
+The `WaiBrowserUI` scheme checks site entry, confirmation/cancellation, browsing, tabs and removing trust on an iPhone or iPad simulator. It attaches actual screenshots to the test result. The browsing check uses `https://waiwai.is/browser`; network access is required. Use a disposable simulator because the test changes its site list.
+
 The same WebKit integration tests can run on Mac Catalyst:
 
 ```sh

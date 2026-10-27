@@ -15,5 +15,26 @@
     "Unsaved form prompts before restart; Stay cancels restart and preserves entered text (native UI screenshot)"
   ],
   "limitation": "CUA temporary pasteboard restoration races asynchronous Chromium webpage paste; webpage clipboard shortcuts need a different isolated test harness. Native field paste is verified.",
-  "ios": "Apple Distribution archive/export succeeded. Three Mac Catalyst tests passed, including actual WebKit subresources, rejection cases, revocation, cookies and localStorage. Native Catalyst Command-T/W/comma/Escape and HTTPS navigation verified. iPhone/iPad launch blocked by CoreSimulator; mobile UI verification remains pending."
+  "ios": {
+    "build": "0.2.0 (4), Apple Distribution, uploaded and VALID",
+    "securityTests": {
+      "macCatalystPassed": 3,
+      "iPhoneSimulatorPassed": 3,
+      "coverage": "Scoped TLS, hostname/expiry/chain rejection, wildcard/mixed DNS/IP SAN, WebKit main page and subresources, revocation, cookies and localStorage"
+    },
+    "observed": [
+      "Catalyst Command-T/W/comma/Escape and HTTPS navigation",
+      "Actual iPhone home and certificate-settings layout",
+      "Actual iPhone: URL entry normalizes to example.org; confirmation can be cancelled and applied; public HTTPS page loads"
+    ],
+    "uiAutomation": "Full XCUITest run is not verified. The first run used an obsolete external page heading; the corrected run failed to obtain accessibility snapshots before app initialization. A process sample was blocked in simulator dyld mmap, before application code.",
+    "iPad": "Native build/launch attempted; full interface and interaction verification pending. Do not count a successful launch command as a passed UI test.",
+    "testflight": {
+      "version": "0.2.0 (4)",
+      "internal": "IN_BETA_TESTING",
+      "external": "WAITING_FOR_BETA_REVIEW",
+      "verifiedAt": "2026-10-27T06:02:00Z"
+    },
+    "appStore": "Public review postponed at user request; PREPARE_FOR_SUBMISSION"
+  }
 }

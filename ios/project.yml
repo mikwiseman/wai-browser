@@ -67,6 +67,16 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: is.waiwai.browser.ios.tests
+  WaiBrowserUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - WaiBrowserUITests
+    dependencies:
+      - target: WaiBrowser
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: is.waiwai.browser.ios.uitests
 schemes:
   WaiBrowser:
     build:
@@ -75,3 +85,10 @@ schemes:
     test:
       targets:
         - WaiBrowserTests
+  WaiBrowserUI:
+    build:
+      targets:
+        WaiBrowser: all
+    test:
+      targets:
+        - WaiBrowserUITests
