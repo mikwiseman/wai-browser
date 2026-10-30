@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(WaiBrowser VERSION 0.2.0 LANGUAGES C CXX OBJC OBJCXX)
+project(WaiBrowser VERSION 0.3.0 LANGUAGES C CXX OBJC OBJCXX)
 if(NOT APPLE)
   message(FATAL_ERROR "This first release targets macOS Apple Silicon")
 endif()
@@ -56,7 +56,7 @@ add_custom_command(TARGET wai_browser POST_BUILD
   VERBATIM
 )
 enable_testing()
-add_executable(trust_test tests/trust_test.mm src/trust.mm)
+add_executable(trust_test tests/trust_test.mm src/trust.mm shared/WAISite.m)
 target_compile_options(trust_test PRIVATE -fobjc-arc)
 target_link_libraries(trust_test "-framework Foundation" sqlite3)
 add_test(NAME trust COMMAND trust_test "${CMAKE_SOURCE_DIR}/work/test-certificates")

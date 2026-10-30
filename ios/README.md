@@ -1,6 +1,6 @@
 # iOS
 
-Native UIKit browser, SwiftUI certificate settings, system WebKit. iOS 26+ is required for the public WebKit storage export/restore API used when revoking certificate trust. Mac Catalyst is enabled for development tests; the distributed Mac app uses Chromium.
+Native UIKit browser, SwiftUI history/bookmarks/downloads/settings, system WebKit. iOS 26+ is required for the public WebKit storage export/restore API used when revoking certificate trust. Mac Catalyst is enabled for development tests; the distributed Mac app uses Chromium.
 
 ## Build
 
@@ -25,7 +25,9 @@ python3 tests/ios_tls_server.py
 
 Run the WaiBrowser scheme's tests on a simulator. Fixture names use `nip.io` to resolve to loopback; DNS must be available. Test keys are generated under ignored `work/ios-certificates/` and never included in the app target or repository.
 
-The `WaiBrowserUI` scheme checks site entry, confirmation/cancellation, browsing, tabs and removing trust on an iPhone or iPad simulator. It attaches actual screenshots to the test result. The browsing check uses `https://waiwai.is/browser`; network access is required. Use a disposable simulator because the test changes its site list.
+The `WaiBrowserUI` scheme checks certificate search/add/remove, confirmation/cancellation, page navigation, history, bookmarks, tab restoration, downloads and history clearing. Browsing and downloads use the local fixture server on port 9561. It attaches actual screenshots to the test result. Use a disposable simulator because the tests change its site list and browsing data.
+
+Library tests check persistence, deduplication, clearing, session selection and excluding internal URLs and credentials. The library stores up to 5,000 recent distinct URLs in an atomic local file protected until first device unlock. Downloads stay in the app until shared to Files or deleted. Clearing history keeps bookmarks, tabs and cookies.
 
 The same WebKit integration tests can run on Mac Catalyst:
 

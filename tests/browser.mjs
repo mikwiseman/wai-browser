@@ -8,8 +8,8 @@ const reservation=createServer();await new Promise(r=>reservation.listen(0,'127.
 const port=reservation.address().port;await new Promise(r=>reservation.close(r));
 const results=[];const endpoint='http://127.0.0.1:'+port;let browser,passed=false;
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
-async function launch(){
- execFileSync('/usr/bin/open',['-g','-n','--stderr',setup.folder+'/browser.stderr',setup.app,'--args','--use-mock-keychain','--user-data-dir='+setup.profile,'--remote-debugging-port='+port,'--host-resolver-rules=MAP *.wai.test 127.0.0.1, MAP allowed.wai.test.evil.test 127.0.0.1','--url=about:blank']);
+async function launch(restore=false){
+ execFileSync('/usr/bin/open',['-g','-n','--stderr',setup.folder+'/browser.stderr',setup.app,'--args','--use-mock-keychain','--user-data-dir='+setup.profile,'--remote-debugging-port='+port,'--host-resolver-rules=MAP *.wai.test 127.0.0.1, MAP allowed.wai.test.evil.test 127.0.0.1',...(restore?[]:['--url=about:blank'])]);
  for(let i=0;i<100;i++){try{browser=await chromium.connectOverCDP(endpoint,{timeout:500});return browser.contexts()[0].pages()[0];}catch{await delay(200);}}
  throw new Error('Browser did not start');
 }
@@ -53,6 +53,24 @@ try{
  p=await launch();await p.goto('https://allowed.wai.test:9443/',{waitUntil:'load'});assert.equal(await p.title(),'WAI TLS fixture');
  assert.equal(await p.evaluate(()=>localStorage.getItem('wai-test')),'persisted');
  assert.match(await p.evaluate(()=>document.cookie),/wai-test=persisted/);results.push('profile storage and cookies persist');
+ await p.goto('chrome://history/');
+ await p.getByRole('link',{name:'WAI TLS fixture',exact:true}).first().waitFor({timeout:15000});
+ results.push('history is visible after restarting');
+ for(const selected of [0,1]){
+  await stop();
+  const urls=['https://allowed.wai.test:9443/','chrome://history/'];
+  await writeFile(setup.profile+'/session-tabs.json',JSON.stringify({urls,selected}));
+  await launch(true);
+  let state=[];
+  for(let i=0;i<50;i++){
+   state=await Promise.all(browser.contexts()[0].pages().map(async page=>({url:page.url(),visible:await page.evaluate(()=>document.visibilityState==='visible').catch(()=>false)})));
+   if(state.length===2&&state.some(page=>page.url===urls[selected]&&page.visible))break;
+   await delay(200);
+  }
+  assert.deepEqual(state.map(page=>page.url).sort(),urls.slice().sort());
+  assert.equal(state.find(page=>page.url===urls[selected])?.visible,true,'Restored selected tab '+selected);
+  results.push('tab session restored with active tab '+selected);
+ }
  await writeFile('work/browser-test-results.json',JSON.stringify({passed:true,checks:results},null,2));
  passed=true;
  console.log(JSON.stringify({passed:true,checks:results},null,2));

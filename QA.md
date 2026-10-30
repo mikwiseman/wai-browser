@@ -29,3 +29,13 @@ Published on 27 October 2026: the Pages deployment passed, the live HTTPS feed m
 - iPhone/iPad verification is pending: CoreSimulator's launch service failed to boot the isolated test device. App Store screenshots and review submission are not complete.
 
 [UI evidence](docs/ux-qa.json).
+
+## Version 0.3.0, build 5 — 30 October 2026
+
+- 24 profile-store checks, 25 domain/migration checks and three catalog-parser tests passed. The official registry snapshot has 4,883 rows and produces 1,386 domain rules after normalization/deduplication and the four existing defaults. Two public-suffix rows (`mil.ru`, `*.mil.ru`) were excluded. This is an issuance list, not a live compatibility test of every site.
+- 13 Chromium integration cases passed, including TLS rejection cases, persistent cookies/localStorage/history, and restoring two tabs with either tab selected. Native Mac history, bookmark creation/manager and certificate search were inspected. The public Sber page rendered with the expanded scope. Authenticated banking remains untested.
+- Six iPhone simulator unit/integration tests passed: library persistence/URL filtering, catalog migration, scoped TLS, malformed SANs and real WebKit pages/subresources with trust revocation and cookie/localStorage preservation.
+- All three iPhone UI scenarios passed: certificate search/add/remove and apply/cancel, history/bookmarks/multiple tabs and active-tab restoration, navigation, clearing history, attachment downloads and live completion in the open download list. Downloaded fixture bytes match the served file. Rendered screenshots were inspected.
+- Mac build 5 passed Developer ID verification, Apple notarization, stapling and Gatekeeper. The release archive's Ed25519 signature and byte length were independently checked.
+
+New browsing data stays local. iOS restores tab URLs, not a tab's previous back/forward stack or unfinished forms. Mac restores URLs in one window; window geometry and grouping are not restored. No account sync, GOST, CryptoPro or electronic-signature support was added.

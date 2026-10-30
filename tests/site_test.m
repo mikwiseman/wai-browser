@@ -15,5 +15,10 @@ int main(int argc, char **argv) { @autoreleasepool {
     if (WAISiteFromInput(input,path)) { NSLog(@"FAIL accepted %@",input); return 1; }
   }
   if (!WAIHostMatches(@"STATIC.TBANK.RU.",@[@"tbank.ru"]) || WAIHostMatches(@"tbank.ru.evil.com",@[@"tbank.ru"]) || WAIHostMatches(@"eviltbank.ru",@[@"tbank.ru"])) return 1;
-  puts("21 site parsing and scope checks passed");
+  NSArray *merged = WAIMergeSites(@[@"keep.ru", @"custom.ru"], @[@"keep.ru", @"removed.ru"], @[@"keep.ru", @"new.ru", @"api.removed.ru"]);
+  if (![merged isEqual:@[@"custom.ru", @"keep.ru", @"new.ru"]]) return 1;
+  if ([WAIMergeSites(@[], @[@"removed.ru"], @[@"removed.ru", @"api.removed.ru"]) count]) return 1;
+  if ([WAIMergeSites(@[], @[@"api.removed.ru"], @[@"removed.ru"]) count]) return 1;
+  if (![WAIMergeSites(@[@"custom.ru", @"old.ru"], @[@"old.ru"], @[@"new.ru"]) isEqual:@[@"custom.ru", @"new.ru"]]) return 1;
+  puts("25 site parsing, scope and migration checks passed");
 } }

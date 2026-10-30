@@ -4,6 +4,7 @@
 #include <set>
 #include <sys/stat.h>
 #include "trust.h"
+#import "../shared/WAISite.h"
 #include <arpa/inet.h>
 #include <algorithm>
 #include <cctype>
@@ -32,9 +33,9 @@ Bytes ReadBytes(const std::string& path) {
   std::ifstream file(path,std::ios::binary);
   return Bytes(std::istreambuf_iterator<char>(file),{});
 }
-TrustConfig LoadConfig(const std::string& path) {
+TrustConfig LoadConfig(const std::string& path,const std::vector<std::string>& defaults) {
   NSString* filename=[NSString stringWithUTF8String:path.c_str()];
-  if(![[NSFileManager defaultManager] fileExistsAtPath:filename])return {true,{"rzd.ru","tbank.ru","tbank-online.com","tinkoff.ru"}};
+  if(![[NSFileManager defaultManager] fileExistsAtPath:filename])return {true,defaults,defaults};
   NSData* data=[NSData dataWithContentsOfFile:filename];
   id json=data?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
   if(![json isKindOfClass:NSDictionary.class])return {false,{}};
@@ -43,12 +44,19 @@ TrustConfig LoadConfig(const std::string& path) {
     if(![value isKindOfClass:NSString.class])continue;
     auto domain=NormalizeDomain([value UTF8String]);if(!domain.empty())config.domains.push_back(domain);
   }
+  NSMutableArray* selected=[NSMutableArray array];for(const auto& value:config.domains)[selected addObject:@(value.c_str())];
+  NSMutableArray* updated=[NSMutableArray array];for(const auto& value:defaults)[updated addObject:@(value.c_str())];
+  NSArray* previous=[json[@"catalogDomains"] isKindOfClass:NSArray.class]?json[@"catalogDomains"]:@[@"rzd.ru",@"tbank.ru",@"tbank-online.com",@"tinkoff.ru"];
+  for(id value in previous)if(![value isKindOfClass:NSString.class]||NormalizeDomain([value UTF8String]).empty())return {false,{},{}};
+  config.domains.clear();for(NSString* value in WAIMergeSites(selected,previous,updated))config.domains.push_back(value.UTF8String);
+  config.catalogDomains=defaults;
   return config;
 }
 bool SaveConfig(const std::string& path,const TrustConfig& config) {
   NSMutableArray* domains=[NSMutableArray array];
   for(const auto& domain:config.domains)[domains addObject:[NSString stringWithUTF8String:domain.c_str()]];
-  NSData* data=[NSJSONSerialization dataWithJSONObject:@{@"enabled":@(config.enabled),@"domains":domains} options:NSJSONWritingPrettyPrinted error:nil];
+  NSMutableArray* catalog=[NSMutableArray array];for(const auto& domain:config.catalogDomains)[catalog addObject:@(domain.c_str())];
+  NSData* data=[NSJSONSerialization dataWithJSONObject:@{@"enabled":@(config.enabled),@"domains":domains,@"catalogDomains":catalog} options:NSJSONWritingPrettyPrinted error:nil];
   return [data writeToFile:[NSString stringWithUTF8String:path.c_str()] options:NSDataWritingAtomic error:nil];
 }
 }

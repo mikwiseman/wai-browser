@@ -8,6 +8,9 @@ import UIKit
 }
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        ((window?.rootViewController as? UINavigationController)?.viewControllers.first as? BrowserController)?.saveSession()
+    }
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
         guard let scene = scene as? UIWindowScene else { return }
         window = UIWindow(windowScene: scene)

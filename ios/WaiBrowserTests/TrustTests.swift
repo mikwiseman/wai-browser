@@ -3,6 +3,15 @@ import WebKit
 @testable import WaiBrowser
 
 final class TrustTests: XCTestCase {
+    func testCatalogMigrationPreservesUserChoices() throws {
+        let old = try JSONDecoder().decode(SiteSettings.self, from: Data(#"{"enabled":false,"domains":["rzd.ru","manual.example"]}"#.utf8))
+        let updated = old.updatingCatalog()
+        XCTAssertFalse(updated.enabled)
+        XCTAssertTrue(updated.domains.contains("manual.example"))
+        XCTAssertTrue(updated.domains.contains("sberbank.ru"))
+        XCTAssertFalse(updated.domains.contains("tbank.ru"))
+        XCTAssertEqual(updated.updatingCatalog(), updated)
+    }
     let host = "allowed.127.0.0.1.nip.io"
     func fixturePolicy() -> TrustPolicy {
         TrustPolicy(settings: SiteSettings(enabled: true, domains: [host]), certificates: Bundle(for: Self.self).resourceURL!.appendingPathComponent("ios-certificates"))
@@ -34,7 +43,9 @@ final class TrustTests: XCTestCase {
         }
     }
     @MainActor func testWebKitPageResourcesAndRevocation() async throws {
-        let browser = BrowserController(policy: fixturePolicy(), dataStore: .nonPersistent())
+        let libraryFile = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".json")
+        defer { try? FileManager.default.removeItem(at: libraryFile) }
+        let browser = BrowserController(policy: fixturePolicy(), dataStore: .nonPersistent(), library: BrowserLibrary(file: libraryFile))
         browser.loadViewIfNeeded()
         let window = UIWindow(frame: UIScreen.main.bounds); window.rootViewController = browser; window.makeKeyAndVisible()
         let probe = Probe(owner: browser)

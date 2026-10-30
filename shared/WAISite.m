@@ -48,3 +48,17 @@ BOOL WAIHostMatches(NSString *host, NSArray<NSString *> *sites) {
   for (NSString *site in sites) if ([value isEqual:site] || [value hasSuffix:[@"." stringByAppendingString:site]]) return YES;
   return NO;
 }
+NSArray<NSString *> *WAIMergeSites(NSArray<NSString *> *selected, NSArray<NSString *> *previous, NSArray<NSString *> *updated) {
+  NSMutableSet *removed = [NSMutableSet setWithArray:previous];
+  [removed minusSet:[NSSet setWithArray:selected]];
+  NSMutableSet *result = [NSMutableSet setWithArray:selected];
+  [result minusSet:[NSSet setWithArray:previous]];
+  for (NSString *site in updated) {
+    BOOL excluded = NO;
+    for (NSString *old in removed) {
+      if (WAIHostMatches(site, @[old]) || WAIHostMatches(old, @[site])) { excluded = YES; break; }
+    }
+    if (!excluded) [result addObject:site];
+  }
+  return [result.allObjects sortedArrayUsingSelector:@selector(compare:)];
+}

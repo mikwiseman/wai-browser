@@ -27,6 +27,10 @@ static wai::TrustConfig g_appliedTrust;
 static bool g_restart=false;
 static bool g_restartInBackground=false;
 static NSMutableArray<NSString*>* g_restoreURLs;
+static NSInteger g_restoreSelected=0;
+static bool g_restoreSelectionPending=false;
+static bool g_quitting=false;
+static void SaveSession();
 
 static NSString* StartURL() {return [[[NSBundle mainBundle] URLForResource:@"start" withExtension:@"html"] absoluteString];}
 static NSString* Site(NSString* value) {return WAISiteFromInput(value,[NSBundle.mainBundle.resourcePath stringByAppendingPathComponent:@"public_suffix_list.dat"]);}
@@ -42,6 +46,8 @@ static bool NeedsRestart() {return g_trust.enabled!=g_appliedTrust.enabled || g_
 @property(strong) NSButton* removeButton;
 @property(strong) NSTextField* status;
 @property(strong) NSButton* restartButton;
+@property(strong) NSSearchField* filter;
+@property(copy) NSArray<NSString*>* visibleSites;
 @property(strong) SPUStandardUpdaterController* updater;
 - (void)installMenu;
 - (void)showSettings:(id)sender;
@@ -51,14 +57,25 @@ static bool NeedsRestart() {return g_trust.enabled!=g_appliedTrust.enabled || g_
 @end
 static WaiDelegate* g_delegate;
 
-class BrowserClient final : public CefClient, public CefLifeSpanHandler, public CefFocusHandler, public CefJSDialogHandler {
+class BrowserClient final : public CefClient, public CefLifeSpanHandler, public CefFocusHandler, public CefJSDialogHandler, public CefLoadHandler {
  public:
   std::vector<CefRefPtr<CefBrowser>> browsers;
   CefRefPtr<CefBrowser> active;
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override {return this;}
   CefRefPtr<CefFocusHandler> GetFocusHandler() override {return this;}
   CefRefPtr<CefJSDialogHandler> GetJSDialogHandler() override {return this;}
+  CefRefPtr<CefLoadHandler> GetLoadHandler() override {return this;}
   void OnGotFocus(CefRefPtr<CefBrowser> browser) override {active=browser;}
+  void OnLoadEnd(CefRefPtr<CefBrowser>,CefRefPtr<CefFrame> frame,int) override {if(frame->IsMain()&&!g_restoreURLs.count&&!g_restoreSelectionPending&&!g_quitting)SaveSession();}
+  void OnLoadingStateChange(CefRefPtr<CefBrowser> browser,bool loading,bool,bool) override {
+    if(loading||!g_restoreSelectionPending||g_restoreURLs.count||!browser->IsSame(browsers.back()))return;
+    g_restoreSelectionPending=false;
+    CefPostTask(TID_UI,CefCreateClosureTask(base::BindOnce([](CefRefPtr<CefBrowser> b){
+      b->GetHost()->ExecuteChromeCommand(IDC_SELECT_TAB_0,CEF_WOD_CURRENT_TAB);
+      for(NSInteger i=0;i<g_restoreSelected;++i)b->GetHost()->ExecuteChromeCommand(IDC_SELECT_NEXT_TAB,CEF_WOD_CURRENT_TAB);
+      g_restoreSelected=0;
+    },browser)));
+  }
   void OnAfterCreated(CefRefPtr<CefBrowser> browser) override {
     CEF_REQUIRE_UI_THREAD();browsers.push_back(browser);active=browser;[g_delegate installMenu];
     if(g_restoreURLs.count) {
@@ -71,15 +88,16 @@ class BrowserClient final : public CefClient, public CefLifeSpanHandler, public 
     CEF_REQUIRE_UI_THREAD();
     std::erase_if(browsers,[&](auto b){return b->IsSame(browser);});
     if(active&&active->IsSame(browser))active=browsers.empty()?nullptr:browsers.back();
+    if(!browsers.empty()&&!g_quitting)SaveSession();
     if(browsers.empty())CefQuitMessageLoop();
   }
   bool OnBeforeUnloadDialog(CefRefPtr<CefBrowser>,const CefString&,bool,CefRefPtr<CefJSDialogCallback> callback) override {
-    if(!g_restart)return false;
+    if(!g_restart&&!g_quitting)return false;
     NSAlert* alert=[NSAlert new];alert.messageText=@"На странице есть несохранённые изменения";
-    alert.informativeText=@"Продолжить перезапуск? Несохранённый текст может быть потерян.";
-    [alert addButtonWithTitle:@"Остаться"];[alert addButtonWithTitle:@"Перезапустить"];
+    alert.informativeText=g_restart?@"Продолжить перезапуск? Несохранённый текст может быть потерян.":@"Закрыть браузер? Несохранённый текст может быть потерян.";
+    [alert addButtonWithTitle:@"Остаться"];[alert addButtonWithTitle:g_restart?@"Перезапустить":@"Закрыть"];
     bool leave=[alert runModal]==NSAlertSecondButtonReturn;
-    if(!leave){g_restart=false;[[NSFileManager defaultManager] removeItemAtPath:[@(g_profile.c_str()) stringByAppendingPathComponent:@"restart-tabs.json"] error:nil];}
+    if(!leave){g_restart=false;g_quitting=false;[[NSFileManager defaultManager] removeItemAtPath:[@(g_profile.c_str()) stringByAppendingPathComponent:@"restart-tabs.json"] error:nil];}
     callback->Continue(leave,{});return true;
   }
   void CloseAll(){auto copy=browsers;for(auto browser:copy)browser->GetHost()->CloseBrowser(false);}
@@ -87,6 +105,20 @@ class BrowserClient final : public CefClient, public CefLifeSpanHandler, public 
   IMPLEMENT_REFCOUNTING(BrowserClient);
 };
 static CefRefPtr<BrowserClient> g_client;
+static void SaveSession() {
+  if(!g_client)return;
+  NSMutableArray* urls=[NSMutableArray array];NSInteger selected=0;
+  for(auto browser:g_client->browsers){
+    if(browser->GetHost()->GetRequestContext()->GetCachePath().empty())continue;
+    NSString* url=@(browser->GetMainFrame()->GetURL().ToString().c_str());
+    if(!url.length)continue;
+    if(g_client->active&&browser->IsSame(g_client->active))selected=urls.count;
+    [urls addObject:[url isEqual:StartURL()]?@"wai:start":url];
+  }
+  if(!urls.count)return;
+  NSData* data=[NSJSONSerialization dataWithJSONObject:@{@"urls":urls,@"selected":@(selected)} options:0 error:nil];
+  [data writeToFile:[@(g_profile.c_str()) stringByAppendingPathComponent:@"session-tabs.json"] options:NSDataWritingAtomic error:nil];
+}
 
 class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
  public:
@@ -94,12 +126,16 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
   void OnContextInitialized() override {
     CEF_REQUIRE_UI_THREAD();g_client=new BrowserClient;
     auto command=CefCommandLine::GetGlobalCommandLine();
-    if(command->HasSwitch("restore-wai-tabs")) {
-      NSString* path=[@(g_profile.c_str()) stringByAppendingPathComponent:@"restart-tabs.json"];
+    if(command->HasSwitch("restore-wai-tabs")||!command->HasSwitch("url")) {
+      BOOL restarting=command->HasSwitch("restore-wai-tabs");
+      NSString* path=[@(g_profile.c_str()) stringByAppendingPathComponent:restarting?@"restart-tabs.json":@"session-tabs.json"];
       NSData* data=[NSData dataWithContentsOfFile:path];
       id urls=data?[NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingMutableContainers error:nil]:nil;
-      if([urls isKindOfClass:NSMutableArray.class])g_restoreURLs=urls;
-      [[NSFileManager defaultManager] removeItemAtPath:path error:nil];
+      if([urls isKindOfClass:NSDictionary.class]){g_restoreSelected=[urls[@"selected"] integerValue];urls=urls[@"urls"];}
+      if([urls isKindOfClass:NSMutableArray.class]){g_restoreURLs=[NSMutableArray array];for(id value in urls)if([value isKindOfClass:NSString.class])[g_restoreURLs addObject:value];}
+      g_restoreSelected=MAX(0,MIN(g_restoreSelected,(NSInteger)g_restoreURLs.count-1));
+      g_restoreSelectionPending=g_restoreURLs.count>0;
+      if(restarting)[[NSFileManager defaultManager] removeItemAtPath:path error:nil];
       for(NSUInteger i=0;i<g_restoreURLs.count;++i)if([g_restoreURLs[i] isEqual:@"wai:start"])g_restoreURLs[i]=StartURL();
     }
     std::string url=command->GetSwitchValue("url");
@@ -172,6 +208,14 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
   NSMenuItem* close=[file.submenu addItemWithTitle:@"Закрыть" action:@selector(closeContext:) keyEquivalent:@"w"];close.target=self;
   commandItem(file.submenu,@"Сохранить страницу…",@"s",IDC_SAVE_PAGE);
   commandItem(file.submenu,@"Печать…",@"p",IDC_PRINT);
+  commandItem(file.submenu,@"Загрузки",@"j",IDC_SHOW_DOWNLOADS,NSEventModifierFlagCommand|NSEventModifierFlagShift);
+  NSMenuItem* history=[NSMenuItem new];history.title=@"История";history.submenu=[[NSMenu alloc] initWithTitle:history.title];[menu addItem:history];
+  commandItem(history.submenu,@"Показать историю",@"y",IDC_SHOW_HISTORY);
+  commandItem(history.submenu,@"Очистить данные браузера…",@"",IDC_CLEAR_BROWSING_DATA);
+  NSMenuItem* bookmarks=[NSMenuItem new];bookmarks.title=@"Закладки";bookmarks.submenu=[[NSMenu alloc] initWithTitle:bookmarks.title];[menu addItem:bookmarks];
+  commandItem(bookmarks.submenu,@"Добавить страницу",@"d",IDC_BOOKMARK_THIS_TAB);
+  commandItem(bookmarks.submenu,@"Все закладки",@"b",IDC_SHOW_BOOKMARK_MANAGER,NSEventModifierFlagCommand|NSEventModifierFlagOption);
+  commandItem(bookmarks.submenu,@"Панель закладок",@"b",IDC_SHOW_BOOKMARK_BAR,NSEventModifierFlagCommand|NSEventModifierFlagShift);
   commandItem(view.submenu,@"Адресная строка",@"l",IDC_FOCUS_LOCATION);
   commandItem(view.submenu,@"Обновить",@"r",IDC_RELOAD);
   commandItem(view.submenu,@"Обновить без кэша",@"r",IDC_RELOAD_BYPASSING_CACHE,NSEventModifierFlagCommand|NSEventModifierFlagShift);
@@ -209,6 +253,7 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
 }
 - (void)refreshSettings {
   self.enabled.state=g_trust.enabled?NSControlStateValueOn:NSControlStateValueOff;
+  NSMutableArray* visible=[NSMutableArray array];for(auto& site:g_trust.domains){NSString* value=@(site.c_str());if(!self.filter.stringValue.length||[value localizedStandardContainsString:self.filter.stringValue])[visible addObject:value];}self.visibleSites=visible;
   [self.sites reloadData];self.removeButton.enabled=self.sites.selectedRow>=0;
   self.restartButton.hidden=!NeedsRestart();
   self.status.stringValue=NeedsRestart()?@"Сохранено. Примените изменения перезапуском.":@"Обычная проверка сертификатов на остальных сайтах.";
@@ -217,9 +262,10 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
   if(!wai::SaveConfig(g_profile+"/trust.json",next)){self.status.stringValue=@"Не удалось сохранить. Попробуйте ещё раз.";return NO;}
   g_trust=next;[self refreshSettings];return YES;
 }
-- (NSInteger)numberOfRowsInTableView:(NSTableView*)table {return g_trust.domains.size();}
+- (void)filterSites:(id)sender {[self refreshSettings];}
+- (NSInteger)numberOfRowsInTableView:(NSTableView*)table {return self.visibleSites.count;}
 - (NSView*)tableView:(NSTableView*)table viewForTableColumn:(NSTableColumn*)column row:(NSInteger)row {
-  NSTextField* label=[NSTextField labelWithString:@(g_trust.domains[row].c_str())];
+  NSTextField* label=[NSTextField labelWithString:self.visibleSites[row]];
   label.font=[NSFont systemFontOfSize:14];label.accessibilityLabel=label.stringValue;return label;
 }
 - (void)tableViewSelectionDidChange:(NSNotification*)notification {self.removeButton.enabled=self.sites.selectedRow>=0;}
@@ -229,26 +275,28 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
   if(!site){self.status.stringValue=@"Вставьте адрес сайта, например https://rzd.ru";return;}
   auto next=g_trust;std::string domain=site.UTF8String;
   if(std::find(next.domains.begin(),next.domains.end(),domain)==next.domains.end())next.domains.push_back(domain);
+  self.filter.stringValue=site;
   if([self store:next]){self.siteField.stringValue=@"";[self.settingsWindow makeFirstResponder:self.siteField];}
 }
 - (void)addCurrentSite:(id)sender {self.siteField.stringValue=self.currentDomain;[self addSite:sender];}
 - (void)removeSite:(id)sender {
-  NSInteger row=self.sites.selectedRow;if(row<0||row>=(NSInteger)g_trust.domains.size())return;
-  auto next=g_trust;next.domains.erase(next.domains.begin()+row);[self store:next];
+  NSInteger row=self.sites.selectedRow;if(row<0||row>=(NSInteger)self.visibleSites.count)return;
+  auto next=g_trust;std::string domain=self.visibleSites[row].UTF8String;std::erase(next.domains,domain);[self store:next];
 }
 - (void)showSettings:(id)sender {
   if(!self.settingsWindow){
-    self.settingsWindow=[[WaiSettingsWindow alloc] initWithContentRect:NSMakeRect(0,0,560,454) styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable backing:NSBackingStoreBuffered defer:NO];
+    self.settingsWindow=[[WaiSettingsWindow alloc] initWithContentRect:NSMakeRect(0,0,560,494) styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable backing:NSBackingStoreBuffered defer:NO];
     self.settingsWindow.title=@"Сертификаты";self.settingsWindow.releasedWhenClosed=NO;self.settingsWindow.delegate=self;[self.settingsWindow center];
     NSView* content=self.settingsWindow.contentView;
     NSTextField* title=[NSTextField labelWithString:@"Сертификаты для сайтов"];
-    title.font=[NSFont systemFontOfSize:22 weight:NSFontWeightSemibold];title.frame=NSMakeRect(24,390,512,34);[content addSubview:title];
+    title.font=[NSFont systemFontOfSize:22 weight:NSFontWeightSemibold];title.frame=NSMakeRect(24,430,512,34);[content addSubview:title];
     NSTextField* description=[NSTextField wrappingLabelWithString:@"Российские сертификаты только для сайтов из списка и их поддоменов. Только внутри Wai Browser."];
-    description.textColor=NSColor.secondaryLabelColor;description.frame=NSMakeRect(24,344,512,40);[content addSubview:description];
-    self.enabled=[NSButton checkboxWithTitle:@"Российские сертификаты" target:self action:@selector(toggleTrust:)];self.enabled.frame=NSMakeRect(24,310,512,28);[content addSubview:self.enabled];
-    self.siteField=[[NSTextField alloc] initWithFrame:NSMakeRect(24,270,392,28)];self.siteField.placeholderString=@"Адрес сайта или ссылка";self.siteField.accessibilityLabel=@"Адрес сайта";self.siteField.target=self;self.siteField.action=@selector(addSite:);[content addSubview:self.siteField];
-    NSButton* add=[NSButton buttonWithTitle:@"Добавить" target:self action:@selector(addSite:)];add.frame=NSMakeRect(424,267,112,32);[content addSubview:add];
-    self.currentSite=[NSButton buttonWithTitle:@"Добавить текущий сайт" target:self action:@selector(addCurrentSite:)];self.currentSite.frame=NSMakeRect(24,230,512,30);[content addSubview:self.currentSite];
+    description.textColor=NSColor.secondaryLabelColor;description.frame=NSMakeRect(24,384,512,40);[content addSubview:description];
+    self.enabled=[NSButton checkboxWithTitle:@"Российские сертификаты" target:self action:@selector(toggleTrust:)];self.enabled.frame=NSMakeRect(24,350,512,28);[content addSubview:self.enabled];
+    self.siteField=[[NSTextField alloc] initWithFrame:NSMakeRect(24,310,392,28)];self.siteField.placeholderString=@"Адрес сайта или ссылка";self.siteField.accessibilityLabel=@"Адрес сайта";self.siteField.target=self;self.siteField.action=@selector(addSite:);[content addSubview:self.siteField];
+    NSButton* add=[NSButton buttonWithTitle:@"Добавить" target:self action:@selector(addSite:)];add.frame=NSMakeRect(424,307,112,32);[content addSubview:add];
+    self.currentSite=[NSButton buttonWithTitle:@"Добавить текущий сайт" target:self action:@selector(addCurrentSite:)];self.currentSite.frame=NSMakeRect(24,270,512,30);[content addSubview:self.currentSite];
+    self.filter=[[NSSearchField alloc] initWithFrame:NSMakeRect(24,234,512,26)];self.filter.placeholderString=@"Найти сайт";self.filter.accessibilityLabel=@"Найти сайт";self.filter.target=self;self.filter.action=@selector(filterSites:);self.filter.sendsSearchStringImmediately=YES;[content addSubview:self.filter];
     NSScrollView* scroll=[[NSScrollView alloc] initWithFrame:NSMakeRect(24,100,512,120)];scroll.borderType=NSBezelBorder;scroll.hasVerticalScroller=YES;
     self.sites=[[NSTableView alloc] initWithFrame:scroll.bounds];NSTableColumn* column=[[NSTableColumn alloc] initWithIdentifier:@"site"];column.width=480;[self.sites addTableColumn:column];self.sites.headerView=nil;self.sites.rowHeight=28;self.sites.dataSource=self;self.sites.delegate=self;self.sites.accessibilityLabel=@"Сайты с российскими сертификатами";scroll.documentView=self.sites;[content addSubview:scroll];
     self.removeButton=[NSButton buttonWithTitle:@"Удалить выбранный" target:self action:@selector(removeSite:)];self.removeButton.frame=NSMakeRect(20,64,174,30);[content addSubview:self.removeButton];
@@ -281,6 +329,7 @@ class BrowserApp final : public CefApp, public CefBrowserProcessHandler {
   g_restart=true;g_restartInBackground=!NSApp.isActive;[self.settingsWindow orderOut:nil];g_client->CloseAll();
 }
 - (void)quit:(id)sender {
+  SaveSession();g_quitting=true;
   if(g_client)g_client->CloseAll();else CefQuitMessageLoop();
 }
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication*)app{return YES;}
@@ -295,8 +344,11 @@ int main(int argc,char* argv[]) {
     if(g_profile.empty())g_profile=[NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support/Wai Browser"].UTF8String;
     if(![[NSFileManager defaultManager] createDirectoryAtPath:[NSString stringWithUTF8String:g_profile.c_str()] withIntermediateDirectories:YES attributes:@{NSFilePosixPermissions:@0700} error:nil])return 1;
     char resolved[PATH_MAX];if(realpath(g_profile.c_str(),resolved))g_profile=resolved;
-    g_trust=wai::LoadConfig(g_profile+"/trust.json");g_appliedTrust=g_trust;
     std::string resources=NSBundle.mainBundle.resourcePath.UTF8String;
+    NSData* catalogData=[NSData dataWithContentsOfFile:[NSBundle.mainBundle.resourcePath stringByAppendingPathComponent:@"certificates/sites.json"]];
+    NSDictionary* catalog=catalogData?[NSJSONSerialization JSONObjectWithData:catalogData options:0 error:nil]:nil;
+    std::vector<std::string> defaults;for(NSString* value in catalog[@"domains"])defaults.push_back(value.UTF8String);
+    g_trust=wai::LoadConfig(g_profile+"/trust.json",defaults);g_appliedTrust=g_trust;
     auto root=wai::ReadBytes(resources+"/certificates/root.der");
     std::vector<wai::Bytes> intermediates={wai::ReadBytes(resources+"/certificates/intermediate.der"),wai::ReadBytes(resources+"/certificates/intermediate-2024.der")};
     int profileLock=open((g_profile+"/.wai.lock").c_str(),O_RDWR|O_CREAT,0600);
@@ -308,6 +360,7 @@ int main(int argc,char* argv[]) {
       alert.informativeText=@"Хранилище профиля занято или его формат изменился. Браузер не запущен. Проверьте обновление Wai Browser.";
       [alert runModal];close(profileLock);return 1;
     }
+    if(ownProfile&&!wai::SaveConfig(g_profile+"/trust.json",g_trust)){close(profileLock);return 1;}
     CefSettings settings;CefString(&settings.root_cache_path)=g_profile;CefString(&settings.cache_path)=g_profile+"/Default";
     settings.persist_session_cookies=true;settings.log_severity=LOGSEVERITY_ERROR;
     CefString(&settings.log_file)=g_profile+"/browser.log";

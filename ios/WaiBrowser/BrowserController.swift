@@ -2,12 +2,20 @@ import UIKit
 import WebKit
 import SwiftUI
 
-final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDelegate, UISearchBarDelegate {
+final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDelegate, UISearchBarDelegate, WKDownloadDelegate {
     let policy: TrustPolicy
     private(set) var dataStore: WKWebsiteDataStore
     private(set) var tabs: [WKWebView] = []
     private var selected = 0
     private var closedURLs: [URL] = []
+    let library: BrowserLibrary
+    private var sessionURLs: [ObjectIdentifier: URL] = [:]
+    private var restoringSession = false
+    private var downloadDestinations: [ObjectIdentifier: URL] = [:]
+    private var downloadFiles: [ObjectIdentifier: URL] = [:]
+    private var downloads: [WKDownload] = []
+    private let downloadStore = BrowserDownloads()
+    private var downloadsFolder: URL { downloadStore.folder }
     var webView: WKWebView { tabs[selected] }
     private let address = UISearchBar()
     private let progress = UIProgressView(progressViewStyle: .bar)
@@ -24,10 +32,11 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
     private var reloadItem: UIBarButtonItem!
     private var tabsItem: UIBarButtonItem!
 
-    init(policy: TrustPolicy? = nil, dataStore: WKWebsiteDataStore? = nil) {
+    init(policy: TrustPolicy? = nil, dataStore: WKWebsiteDataStore? = nil, library: BrowserLibrary? = nil) {
         let profile = BrowserProfile.load()
         self.policy = policy ?? TrustPolicy(settings: profile.settings)
         self.dataStore = dataStore ?? WKWebsiteDataStore(forIdentifier: profile.identifier)
+        self.library = library ?? BrowserLibrary()
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError() }
@@ -38,8 +47,8 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         address.keyboardType = .webSearch; address.returnKeyType = .go; address.delegate = self
         address.searchTextField.accessibilityIdentifier = "address"
         navigationItem.titleView = address
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "checkmark.shield"), style: .plain, target: self, action: #selector(showSettings))
-        navigationItem.rightBarButtonItem?.accessibilityLabel = "Сертификаты"
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "ellipsis.circle"), menu: browserMenu())
+        navigationItem.rightBarButtonItem?.accessibilityLabel = "Меню"
         backItem = item("chevron.backward", "Назад", #selector(back))
         forwardItem = item("chevron.forward", "Вперёд", #selector(forward))
         reloadItem = item("arrow.clockwise", "Обновить", #selector(reload))
@@ -55,7 +64,12 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         let settings = UIButton(type: .system); settings.setTitle("Настройки сертификатов", for: .normal); settings.addTarget(self, action: #selector(showSettings), for: .touchUpInside); errorView.addArrangedSubview(settings)
         view.addSubview(errorView)
         NSLayoutConstraint.activate([errorView.centerYAnchor.constraint(equalTo: view.centerYAnchor), errorView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 28), errorView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -28)])
-        addTab()
+        let session = library.session
+        restoringSession = true
+        if session.urls.isEmpty { addTab() }
+        else { for url in session.urls { addTab(url: url) }; selectTab(min(session.selected, tabs.count - 1)) }
+        restoringSession = false
+        saveSession()
         BrowserProfile.cleanRetiredStores()
     }
     private func item(_ symbol: String, _ title: String, _ action: Selector) -> UIBarButtonItem {
@@ -70,9 +84,10 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         #if DEBUG
         page.isInspectable = true
         #endif
+        if let url { sessionURLs[ObjectIdentifier(page)] = BrowserLibrary.webURL(url) }
         tabs.append(page); selectTab(tabs.count-1)
         if let url { page.load(URLRequest(url: url)) }
-        else { page.loadHTMLString(Self.home, baseURL: nil) }
+        else if configuration == nil { page.loadHTMLString(Self.home, baseURL: nil) }
         return page
     }
     func selectTab(_ index: Int) {
@@ -81,7 +96,7 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         webView.translatesAutoresizingMaskIntoConstraints = false; view.insertSubview(webView, at: 0)
         NSLayoutConstraint.activate([webView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor), webView.leadingAnchor.constraint(equalTo: view.leadingAnchor), webView.trailingAnchor.constraint(equalTo: view.trailingAnchor), webView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)])
         observations = [webView.observe(\.estimatedProgress, options: [.new]) { [weak self] _,_ in self?.refreshChrome() }, webView.observe(\.isLoading, options: [.new]) { [weak self] _,_ in self?.refreshChrome() }, webView.observe(\.url, options: [.new]) { [weak self] _,_ in self?.refreshChrome() }]
-        refreshChrome()
+        refreshChrome(); saveSession()
     }
     private func refreshChrome() {
         guard !tabs.isEmpty else { return }
@@ -94,6 +109,7 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         reloadItem?.image = UIImage(systemName: webView.isLoading ? "xmark" : "arrow.clockwise")
         reloadItem?.accessibilityLabel = webView.isLoading ? "Остановить" : "Обновить"
         tabsItem?.accessibilityValue = String(tabs.count)
+        navigationItem.rightBarButtonItem?.menu = browserMenu()
     }
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         let text = (searchBar.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
@@ -105,13 +121,24 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         address.resignFirstResponder(); address.searchTextField.resignFirstResponder()
         if let url { load(url) }
     }
-    func load(_ url: URL) { failures.removeValue(forKey: ObjectIdentifier(webView)); refreshChrome(); webView.load(URLRequest(url: url)) }
+    func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        DispatchQueue.main.async { searchBar.searchTextField.selectAll(nil) }
+    }
+    func load(_ url: URL) {
+        failures.removeValue(forKey: ObjectIdentifier(webView)); refreshChrome()
+        webView.load(URLRequest(url: url))
+    }
+    func saveSession() {
+        guard !restoringSession, !applyingSettings, !tabs.isEmpty else { return }
+        library.saveSession(tabs.map { sessionURLs[ObjectIdentifier($0)] }, selected: selected)
+    }
     @objc func focusAddress() { address.searchTextField.becomeFirstResponder(); address.searchTextField.selectAll(nil) }
     @objc func newTab() { addTab(); focusAddress() }
     @objc func closeTab() {
         if presentedViewController != nil { dismiss(animated: true); return }
         if let url = webView.url, url.scheme != "about" { closedURLs.append(url) }
         failures.removeValue(forKey: ObjectIdentifier(webView)); rejectedHosts.removeValue(forKey: ObjectIdentifier(webView))
+        sessionURLs.removeValue(forKey: ObjectIdentifier(webView))
         webView.stopLoading(); webView.removeFromSuperview(); tabs.remove(at: selected)
         if tabs.isEmpty { addTab() } else { selectTab(min(selected, tabs.count-1)) }
     }
@@ -125,6 +152,100 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
     @objc func previousTab() { selectTab((selected+tabs.count-1)%tabs.count) }
     @objc func chooseTab(_ command: UIKeyCommand) { if let n = Int(command.input ?? "") { selectTab(n == 9 ? tabs.count-1 : n-1) } }
     @objc func findInPage() { webView.findInteraction?.presentFindNavigator(showingReplace: false) }
+    private func browserMenu() -> UIMenu {
+        let url = tabs.isEmpty ? nil : BrowserLibrary.webURL(webView.url)
+        let bookmarked = library.isBookmarked(url)
+        func action(_ title: String, _ icon: String, _ perform: @escaping () -> Void) -> UIAction {
+            UIAction(title: title, image: UIImage(systemName: icon)) { _ in perform() }
+        }
+        let bookmark = action(bookmarked ? "Убрать закладку" : "В закладки", bookmarked ? "bookmark.fill" : "bookmark") { [weak self] in self?.toggleBookmark() }
+        let share = action("Поделиться", "square.and.arrow.up") { [weak self] in self?.sharePage() }
+        if url == nil { bookmark.attributes = .disabled; share.attributes = .disabled }
+        return UIMenu(children: [
+            UIMenu(options: .displayInline, children: [action("История", "clock") { [weak self] in self?.showHistory() }, action("Закладки", "book") { [weak self] in self?.showBookmarks() }, action(downloads.isEmpty ? "Загрузки" : "Загрузки · \(downloads.count)", "arrow.down.circle") { [weak self] in self?.showDownloads() }]),
+            UIMenu(options: .displayInline, children: [bookmark, share, action("Найти на странице", "doc.text.magnifyingglass") { [weak self] in self?.findInPage() }]),
+            action("Сертификаты", "checkmark.shield") { [weak self] in self?.showSettings() }
+        ])
+    }
+    @objc func showHistory() { showLibrary(.history) }
+    @objc func showBookmarks() { showLibrary(.bookmarks) }
+    private func showLibrary(_ section: LibraryView.Section) {
+        guard presentedViewController == nil else { return }
+        let sheet = UIHostingController(rootView: LibraryView(library: library, section: section) { [weak self] url in
+            self?.dismiss(animated: true) { self?.load(url) }
+        })
+        present(sheet, animated: true)
+    }
+    @objc func toggleBookmark() {
+        guard let url = webView.url else { return }
+        library.setBookmark(url, title: webView.title, saved: !library.isBookmarked(url)); refreshChrome()
+    }
+    @objc func sharePage() {
+        guard let url = BrowserLibrary.webURL(webView.url), presentedViewController == nil else { return }
+        let sheet = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        sheet.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
+        present(sheet, animated: true)
+    }
+    private func showDownloads() {
+        guard presentedViewController == nil else { return }
+        downloadStore.refresh(activeCount: downloads.count)
+        let sheet = UIHostingController(rootView: DownloadsView(store: downloadStore) { [weak self] url in
+            self?.dismiss(animated: true) {
+                guard let self else { return }
+                let share = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                share.popoverPresentationController?.barButtonItem = self.navigationItem.rightBarButtonItem
+                self.present(share, animated: true)
+            }
+        })
+        present(sheet, animated: true)
+    }
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        decisionHandler(navigationAction.shouldPerformDownload ? .download : .allow)
+    }
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        let attachment = (navigationResponse.response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Disposition")?
+            .trimmingCharacters(in: .whitespaces).lowercased().hasPrefix("attachment") == true
+        decisionHandler(attachment || !navigationResponse.canShowMIMEType ? .download : .allow)
+    }
+    func webView(_ webView: WKWebView, navigationAction: WKNavigationAction, didBecome download: WKDownload) { beginDownload(download) }
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) { beginDownload(download) }
+    private func beginDownload(_ download: WKDownload) { downloads.append(download); download.delegate = self; downloadStore.refresh(activeCount: downloads.count); refreshChrome() }
+    func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String, completionHandler: @escaping (URL?) -> Void) {
+        guard downloads.contains(where: { $0 === download }) else { completionHandler(nil); return }
+        do {
+            try FileManager.default.createDirectory(at: downloadsFolder, withIntermediateDirectories: true)
+            let filename = (suggestedFilename as NSString).lastPathComponent
+            let base = downloadsFolder.appendingPathComponent(filename.isEmpty || filename == "." || filename == ".." ? "Файл" : filename)
+            var destination = base; var number = 1
+            while FileManager.default.fileExists(atPath: destination.path) || downloadFiles.values.contains(destination) {
+                destination = base.deletingPathExtension().appendingPathExtension("\(number)" + (base.pathExtension.isEmpty ? "" : "." + base.pathExtension)); number += 1
+            }
+            let temporary = downloadsFolder.appendingPathComponent(".download-" + UUID().uuidString)
+            downloadDestinations[ObjectIdentifier(download)] = temporary
+            downloadFiles[ObjectIdentifier(download)] = destination
+            completionHandler(temporary)
+        } catch { completionHandler(nil) }
+    }
+    func downloadDidFinish(_ download: WKDownload) {
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if let temporary = downloadDestinations[ObjectIdentifier(download)], let destination = downloadFiles[ObjectIdentifier(download)] {
+            do { try FileManager.default.moveItem(at: temporary, to: destination) }
+            catch { self.download(download, didFailWithError: error, resumeData: nil); return }
+        }
+        downloadDestinations.removeValue(forKey: ObjectIdentifier(download)); downloadFiles.removeValue(forKey: ObjectIdentifier(download)); downloads.removeAll { $0 === download }; refreshChrome()
+        downloadStore.refresh(activeCount: downloads.count)
+        if presentedViewController == nil { showDownloads() }
+    }
+    func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+        guard downloads.contains(where: { $0 === download }) else { return }
+        if let partial = downloadDestinations.removeValue(forKey: ObjectIdentifier(download)) { try? FileManager.default.removeItem(at: partial) }
+        downloadFiles.removeValue(forKey: ObjectIdentifier(download))
+        downloads.removeAll { $0 === download }; refreshChrome()
+        downloadStore.refresh(activeCount: downloads.count)
+        guard presentedViewController == nil else { return }
+        let alert = UIAlertController(title: "Не удалось загрузить файл", message: error.localizedDescription, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Готово", style: .default)); present(alert, animated: true)
+    }
     @objc func escape() { if presentedViewController != nil { dismiss(animated: true) } else { webView.stopLoading(); view.endEditing(true) } }
     override var keyCommands: [UIKeyCommand]? {
         guard !applyingSettings else { return [] }
@@ -133,6 +254,7 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         }
         var commands = [key("Адресная строка", "l", #selector(focusAddress)), key("Новая вкладка", "t", #selector(newTab)), key("Закрыть вкладку", "w", #selector(closeTab)), key("Вернуть вкладку", "t", #selector(restoreTab), [.command,.shift]), key("Обновить", "r", #selector(reloadPage)), key("Обновить без кэша", "r", #selector(hardReload), [.command,.shift]), key("Назад", "[", #selector(back)), key("Вперёд", "]", #selector(forward)), key("Найти", "f", #selector(findInPage)), key("Сертификаты", ",", #selector(showSettings)), key("Следующая вкладка", "\t", #selector(nextTab), .control), key("Предыдущая вкладка", "\t", #selector(previousTab), [.control,.shift]), key("Закрыть", UIKeyCommand.inputEscape, #selector(escape), [])]
         for n in 1...9 { commands.append(key("Вкладка \(n)", String(n), #selector(chooseTab(_:)))) }
+        commands += [key("История", "y", #selector(showHistory)), key("Закладки", "b", #selector(showBookmarks), [.command, .alternate]), key("В закладки", "d", #selector(toggleBookmark))]
         return commands
     }
     @objc func showTabs() {
@@ -162,15 +284,23 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         guard !applyingSettings, next != policy.settings else { return }
         applyingSettings = true
         navigationController?.view.isUserInteractionEnabled = false
-        defer { applyingSettings = false; navigationController?.view.isUserInteractionEnabled = true }
+        defer { applyingSettings = false; navigationController?.view.isUserInteractionEnabled = true; saveSession() }
         let old = policy.settings
         let revokesTrust = old.enabled && !old.domains.isEmpty && (!next.enabled || old.domains.contains { !WAIHostMatches($0, next.domains) })
+        if revokesTrust {
+            for download in downloads {
+                let temporary = downloadDestinations[ObjectIdentifier(download)]
+                download.cancel { _ in if let temporary { try? FileManager.default.removeItem(at: temporary) } }
+            }
+            downloads.removeAll(); downloadDestinations.removeAll(); downloadFiles.removeAll()
+            downloadStore.refresh(activeCount: 0)
+        }
         let urls = tabs.map { failures[ObjectIdentifier($0)]?.url ?? $0.url }; let active = selected
         let previousStore = dataStore
         // Release pages before exporting storage so their JavaScript cannot keep modifying it.
         observations = []
         for page in tabs { page.stopLoading(); page.removeFromSuperview(); page.navigationDelegate = nil; page.uiDelegate = nil }
-        tabs.removeAll(); failures.removeAll(); rejectedHosts.removeAll()
+        tabs.removeAll(); failures.removeAll(); rejectedHosts.removeAll(); sessionURLs.removeAll()
         func restoreTabs() {
             for url in urls { addTab(url: url?.scheme == "about" ? nil : url) }
             if tabs.isEmpty { addTab() }; selectTab(min(active,tabs.count-1))
@@ -202,6 +332,12 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
         if revokesTrust, let identifier = previousStore.identifier { BrowserProfile.retireStore(identifier) }
     }
     func webView(_ webView: WKWebView, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        evaluateChallenge(challenge, page: webView, completionHandler: completionHandler)
+    }
+    func download(_ download: WKDownload, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        evaluateChallenge(challenge, page: nil, completionHandler: completionHandler)
+    }
+    private func evaluateChallenge(_ challenge: URLAuthenticationChallenge, page: WKWebView?, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
               let trust = challenge.protectionSpace.serverTrust else { completionHandler(.performDefaultHandling, nil); return }
         let host = challenge.protectionSpace.host
@@ -216,13 +352,27 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
                 if systemValid { completionHandler(.performDefaultHandling, nil) }
                 else if let accepted { completionHandler(.useCredential, URLCredential(trust: accepted)) }
                 else {
-                    self.rejectedHosts[ObjectIdentifier(webView), default: []].insert(host.lowercased())
+                    if let page { self.rejectedHosts[ObjectIdentifier(page), default: []].insert(host.lowercased()) }
                     completionHandler(.cancelAuthenticationChallenge, nil)
                 }
             }
         }
     }
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { if !tabs.isEmpty, webView === self.webView { refreshChrome() } }
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        guard tabs.contains(where: { $0 === webView }) else { return }
+        sessionURLs[ObjectIdentifier(webView)] = BrowserLibrary.webURL(webView.url); saveSession()
+    }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard tabs.contains(where: { $0 === webView }) else { return }
+        if let url = webView.url { library.visit(url, title: webView.title) }
+        // WebKit can deliver didFinish before it delivers the page title.
+        let url = webView.url
+        webView.evaluateJavaScript("document.title") { [weak self, weak webView] title, _ in
+            guard webView?.url == url else { return }
+            self?.library.updateTitle(title as? String, for: url)
+        }
+        if webView === self.webView { refreshChrome() }
+    }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { showError(webView, error) }
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { showError(webView, error) }
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -241,6 +391,6 @@ final class BrowserController: UIViewController, WKNavigationDelegate, WKUIDeleg
     }
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? { addTab(configuration: configuration) }
     static let home = """
-    <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:light dark}body{margin:0;font:18px -apple-system;background:light-dark(#f5f5ed,#20251e);color:light-dark(#20251e,#f5f5ed)}main{padding:20vh 9vw 5vh}h1{font-size:120px;letter-spacing:-12px;font-weight:850;margin:0}p{font-size:22px;line-height:1.35;margin:22px 0 48px}a{color:inherit;text-decoration:none;border-bottom:1px solid #888;padding-bottom:8px;margin-right:26px}footer{font-size:13px;opacity:.6;margin-top:72px;line-height:1.5}</style><main><h1>wai.</h1><p>Весь интернет.<br>С вашим доверием.</p><a href="https://www.rzd.ru">РЖД ↗</a><a href="https://www.tbank.ru">Т-Банк ↗</a><footer>Сертификаты для выбранных сайтов —<br>под значком щита.</footer></main>
+    <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:light dark}body{margin:0;font:18px -apple-system;background:light-dark(#f5f5ed,#20251e);color:light-dark(#20251e,#f5f5ed)}main{padding:20vh 9vw 5vh}h1{font-size:120px;letter-spacing:-12px;font-weight:850;margin:0}p{font-size:22px;line-height:1.35;margin:22px 0 48px}a{color:inherit;text-decoration:none;border-bottom:1px solid #888;padding-bottom:8px;margin-right:26px}footer{font-size:13px;opacity:.6;margin-top:72px;line-height:1.5}</style><main><h1>wai.</h1><p>Весь интернет.<br>С вашим доверием.</p><a href="https://www.rzd.ru">РЖД ↗</a><a href="https://www.tbank.ru">Т-Банк ↗</a><footer>Сертификаты для выбранных сайтов —<br>в меню браузера.</footer></main>
     """
 }

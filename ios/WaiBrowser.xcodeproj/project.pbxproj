@@ -16,10 +16,14 @@
 		9B9FBADB6F983FA68F8ECCB4 /* certificates in Resources */ = {isa = PBXBuildFile; fileRef = 2911AC9F1609990C02BBAB48 /* certificates */; };
 		A3BE4FDA16153159D7EB8F2E /* WAISite.m in Sources */ = {isa = PBXBuildFile; fileRef = ADFD597F3F9FA7FBD3F1F131 /* WAISite.m */; };
 		B6DFDF26A1D4BAB91A21CE68 /* CertificateScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6227E45F0CD856D4366E8B1A /* CertificateScope.swift */; };
+		BA7917DE0EEF2AA7E74C9ABE /* DownloadsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84BBCC5E3D3E47CF721F310 /* DownloadsView.swift */; };
 		BDC3A0B95C5C6E60199D7C45 /* TrustSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1702DA2724A6557AE49481 /* TrustSettingsView.swift */; };
 		BFE081F49F8D7B85C196AB3F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EE78820283266DD16FC96A39 /* PrivacyInfo.xcprivacy */; };
+		CB6735BB3FF419724A37009B /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D8C30AE6049CB80EB2C6E0 /* LibraryView.swift */; };
+		CE2AE037FBBFCA69A94839F4 /* LibraryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3DEDD7BA11FDD80651DCFB /* LibraryTests.swift */; };
 		E239474869895D87A6A2545A /* BrowserController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB67ED5F91C63F39668C8FE /* BrowserController.swift */; };
 		F4579ECB8DE616FD3BF4111F /* ios-certificates in Resources */ = {isa = PBXBuildFile; fileRef = 3D831FDD06BC25985E364E1F /* ios-certificates */; };
+		F61238D97F8EED1E02E34F81 /* BrowserLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A5E72BE14311C5792605B83 /* BrowserLibrary.swift */; };
 		F9849DC1DC5BBF80CAE6D9D2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 70D82C23326037D38EB50D28 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -52,8 +56,12 @@
 		5D49455DBE526EB09084C4F0 /* TrustTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustTests.swift; sourceTree = "<group>"; };
 		6227E45F0CD856D4366E8B1A /* CertificateScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CertificateScope.swift; sourceTree = "<group>"; };
 		70D82C23326037D38EB50D28 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		92D8C30AE6049CB80EB2C6E0 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		9A5E72BE14311C5792605B83 /* BrowserLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserLibrary.swift; sourceTree = "<group>"; };
+		9E3DEDD7BA11FDD80651DCFB /* LibraryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTests.swift; sourceTree = "<group>"; };
 		AA1702DA2724A6557AE49481 /* TrustSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustSettingsView.swift; sourceTree = "<group>"; };
 		ADFD597F3F9FA7FBD3F1F131 /* WAISite.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WAISite.m; sourceTree = "<group>"; };
+		C84BBCC5E3D3E47CF721F310 /* DownloadsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsView.swift; sourceTree = "<group>"; };
 		CA30D1CB9BDE19DE731C5EE4 /* BrowserUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserUITests.swift; sourceTree = "<group>"; };
 		D6C36174A1C1F096CF6E8C04 /* TrustPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrustPolicy.swift; sourceTree = "<group>"; };
 		DA3F062F2810626738AC46B2 /* public_suffix_list.dat */ = {isa = PBXFileReference; path = public_suffix_list.dat; sourceTree = "<group>"; };
@@ -86,6 +94,7 @@
 		2545C515292569A6EBA5AD91 /* WaiBrowserTests */ = {
 			isa = PBXGroup;
 			children = (
+				9E3DEDD7BA11FDD80651DCFB /* LibraryTests.swift */,
 				5D49455DBE526EB09084C4F0 /* TrustTests.swift */,
 			);
 			path = WaiBrowserTests;
@@ -150,8 +159,11 @@
 				70D82C23326037D38EB50D28 /* Assets.xcassets */,
 				1E24727CD93107A633B113A9 /* Bridge.h */,
 				4FB67ED5F91C63F39668C8FE /* BrowserController.swift */,
+				9A5E72BE14311C5792605B83 /* BrowserLibrary.swift */,
 				6227E45F0CD856D4366E8B1A /* CertificateScope.swift */,
+				C84BBCC5E3D3E47CF721F310 /* DownloadsView.swift */,
 				FAC5C45FCB4F334BBC6973A5 /* Info.plist */,
+				92D8C30AE6049CB80EB2C6E0 /* LibraryView.swift */,
 				EE78820283266DD16FC96A39 /* PrivacyInfo.xcprivacy */,
 				D6C36174A1C1F096CF6E8C04 /* TrustPolicy.swift */,
 				AA1702DA2724A6557AE49481 /* TrustSettingsView.swift */,
@@ -287,6 +299,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CE2AE037FBBFCA69A94839F4 /* LibraryTests.swift in Sources */,
 				3D87C7A75CEAE856CF997802 /* TrustTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -305,7 +318,10 @@
 			files = (
 				7531781EAD10DD8EB6C3499C /* App.swift in Sources */,
 				E239474869895D87A6A2545A /* BrowserController.swift in Sources */,
+				F61238D97F8EED1E02E34F81 /* BrowserLibrary.swift in Sources */,
 				B6DFDF26A1D4BAB91A21CE68 /* CertificateScope.swift in Sources */,
+				BA7917DE0EEF2AA7E74C9ABE /* DownloadsView.swift in Sources */,
+				CB6735BB3FF419724A37009B /* LibraryView.swift in Sources */,
 				179B4819E9DF8A5C6ED6F3CB /* TrustPolicy.swift in Sources */,
 				BDC3A0B95C5C6E60199D7C45 /* TrustSettingsView.swift in Sources */,
 				A3BE4FDA16153159D7EB8F2E /* WAISite.m in Sources */,
@@ -378,7 +394,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = R4A779QVVY;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -393,7 +409,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -495,7 +511,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = R4A779QVVY;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -516,7 +532,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.3.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

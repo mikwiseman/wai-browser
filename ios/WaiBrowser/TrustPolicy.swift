@@ -4,10 +4,23 @@ import WebKit
 
 struct SiteSettings: Codable, Equatable {
     var enabled = true
-    var domains = ["rzd.ru", "tbank.ru", "tbank-online.com", "tinkoff.ru"]
+    static let defaultDomains: [String] = {
+        guard let url = Bundle.main.url(forResource: "sites", withExtension: "json", subdirectory: "certificates"),
+              let data = try? Data(contentsOf: url), let catalog = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let domains = catalog["domains"] as? [String] else { return [] }
+        return domains
+    }()
+    var domains = Self.defaultDomains
+    var catalogDomains: [String]? = Self.defaultDomains
+    func updatingCatalog() -> Self {
+        var next = self
+        next.domains = WAIMergeSites(domains, catalogDomains ?? ["rzd.ru", "tbank.ru", "tbank-online.com", "tinkoff.ru"], Self.defaultDomains)
+        next.catalogDomains = Self.defaultDomains
+        return next
+    }
     static func load() -> Self {
         guard let data = UserDefaults.standard.data(forKey: "siteSettings") else { return Self() }
-        return (try? JSONDecoder().decode(Self.self, from: data)) ?? Self(enabled: false, domains: [])
+        return (try? JSONDecoder().decode(Self.self, from: data))?.updatingCatalog() ?? Self(enabled: false, domains: [])
     }
     func save() { UserDefaults.standard.set(try? JSONEncoder().encode(self), forKey: "siteSettings") }
     func allows(_ host: String) -> Bool { enabled && WAIHostMatches(host, domains) }
@@ -58,7 +71,11 @@ struct BrowserProfile: Codable {
     var settings: SiteSettings
     var identifier: UUID
     static func load() -> Self {
-        if let data = UserDefaults.standard.data(forKey: "browserProfile"), let value = try? JSONDecoder().decode(Self.self, from: data) { return value }
+        if let data = UserDefaults.standard.data(forKey: "browserProfile"), var value = try? JSONDecoder().decode(Self.self, from: data) {
+            let next = value.settings.updatingCatalog()
+            if next != value.settings { value.settings = next; value.save() }
+            return value
+        }
         let value = Self(settings: .load(), identifier: UUID()); value.save(); return value
     }
     func save() { UserDefaults.standard.set(try? JSONEncoder().encode(self), forKey: "browserProfile") }
