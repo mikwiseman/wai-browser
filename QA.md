@@ -39,3 +39,9 @@ Published on 27 October 2026: the Pages deployment passed, the live HTTPS feed m
 - Mac build 5 passed Developer ID verification, Apple notarization, stapling and Gatekeeper. The release archive's Ed25519 signature and byte length were independently checked.
 
 New browsing data stays local. iOS restores tab URLs, not a tab's previous back/forward stack or unfinished forms. Mac restores URLs in one window; window geometry and grouping are not restored. No account sync, GOST, CryptoPro or electronic-signature support was added.
+
+Published build 5: GitHub Pages deployment passed; the live feed matched the signed local bytes, and the public ZIP SHA-256 matched. Sparkle installed 0.3.0 over a disposable unmodified 0.2.0 copy using the public HTTPS feed. Updated executable/catalog bytes, nested signatures and Gatekeeper passed. A separate launch and native menu/catalog search were verified. Automatic relaunch into that specific disposable path was not proven while another copy with the same bundle ID was running.
+
+iOS 0.3.0 (5) uploaded successfully and is `VALID`, assigned to internal and external TestFlight groups. Internal testing is enabled; external beta review was submitted and is awaiting Apple as of 30 October 2026. The public invitation link is unchanged.
+
+iPad simulator: the home page, certificate search/add/confirmation and a local browsing page rendered. The full UI run was interrupted after simulator responsiveness degraded (event-loop idle timeouts and input taking over a minute). iPad history/download/relaunch scenarios are not claimed as passed. Physical-device testing, full VoiceOver and largest-text layouts remain unverified.
